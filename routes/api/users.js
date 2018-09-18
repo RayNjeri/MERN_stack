@@ -8,6 +8,7 @@ const passport = require('passport');
 const User = require('../../models/Users');
 const keys = require('../../config/keys');
 const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 router.get('/test', (req, res) =>
   res.json({
@@ -57,10 +58,16 @@ router.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
+  const { errors, isValid } = validateLoginInput(req.body);
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   User.findOne({ email })
     .then(user => {
       if (!user) {
-        return res.status(404).json({ email: 'User Not Found' });
+        errors.email = 'User Not Found';
+        return res.status(404).json(errors);
       }
       if (!bcrypt.compareSync(req.body.password, user.password)) {
         return res.status(401).send({
