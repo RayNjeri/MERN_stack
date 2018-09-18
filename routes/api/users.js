@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const gravatar = require('gravatar');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const User = require('../../models/Users');
+const keys = require('../../config/keys');
 
 router.get('/test', (req, res) =>
   res.json({
@@ -47,18 +49,32 @@ router.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  User.findOne({ email }).then(user => {
-    if (!user) {
-      return res.status(404).json({ email: 'User Not Found' });
-    }
-    bcrypt.compare(password, user.password).then(isMatch => {
-      if (isMatch) {
-        res.json({ message: 'Login successfully' });
-      } else {
-        return res.status(400).json({ password: 'Password Incorrect!' });
+  User.findOne({ email })
+    .then(user => {
+      if (!user) {
+        return res.status(404).json({ email: 'User Not Found' });
       }
+      if (!bcrypt.compareSync(req.body.password, user.password)) {
+        return res.status(401).send({
+          message: 'Incorrect password'
+        });
+      }
+      const secretKey = keys.SecretKey;
+      const token = jwt.sign(
+        { id: user.id, name: user.name, avatar: user.avatar },
+        secretKey,
+        { expiresIn: '3600' }
+      );
+      return res.status(200).send({
+        message: 'Success',
+        token: 'Bearer ' + token
+      });
+    })
+    .catch(() => {
+      res.status(401).send({
+        message: 'Invalid login credentials'
+      });
     });
-  });
 });
 
 module.exports = router;
