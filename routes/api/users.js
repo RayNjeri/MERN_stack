@@ -11,6 +11,7 @@ router.get('/test', (req, res) =>
   })
 );
 
+//create user
 router.post('/register', (req, res) => {
   User.findOne({ email: req.body.email }).then(user => {
     if (user) {
@@ -29,6 +30,7 @@ router.post('/register', (req, res) => {
       });
       bcrypt.genSalt(10, (err, salt) => {
         bcrypt.hash(newUser.password, salt, (err, hash) => {
+          if (err) throw err;
           newUser.password = hash;
           newUser
             .save()
@@ -37,6 +39,25 @@ router.post('/register', (req, res) => {
         });
       });
     }
+  });
+});
+
+//Login user
+router.post('/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  User.findOne({ email }).then(user => {
+    if (!user) {
+      return res.status(404).json({ email: 'User Not Found' });
+    }
+    bcrypt.compare(password, user.password).then(isMatch => {
+      if (isMatch) {
+        res.json({ message: 'Login successfully' });
+      } else {
+        return res.status(400).json({ password: 'Password Incorrect!' });
+      }
+    });
   });
 });
 
