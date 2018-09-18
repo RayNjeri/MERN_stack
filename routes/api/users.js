@@ -3,6 +3,7 @@ const router = express.Router();
 const gravatar = require('gravatar');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
 
 const User = require('../../models/Users');
 const keys = require('../../config/keys');
@@ -60,11 +61,9 @@ router.post('/login', (req, res) => {
         });
       }
       const secretKey = keys.SecretKey;
-      const token = jwt.sign(
-        { id: user.id, name: user.name, avatar: user.avatar },
-        secretKey,
-        { expiresIn: '3600' }
-      );
+      const payload = { id: user.id, name: user.name, avatar: user.avatar };
+
+      const token = jwt.sign(payload, secretKey, { expiresIn: 3600 });
       return res.status(200).send({
         message: 'Success',
         token: 'Bearer ' + token
@@ -76,5 +75,17 @@ router.post('/login', (req, res) => {
       });
     });
 });
+
+router.get(
+  '/current',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    res.json({
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email
+    });
+  }
+);
 
 module.exports = router;
