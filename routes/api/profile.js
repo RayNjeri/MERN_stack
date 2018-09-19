@@ -6,6 +6,8 @@ const passport = require('passport');
 const Profile = require('../../models/Profile');
 const User = require('../../models/Users');
 const validateProfileInput = require('../../validation/profile');
+const validateExperienceInput = require('../../validation/experience');
+const validateEducationInput = require('../../validation/education');
 
 router.get('/test', (req, res) =>
   res.json({
@@ -132,5 +134,56 @@ router.get('/all', (req, res) => {
     })
     .catch(err => res.status(404).json({ profiles: 'There are no profiles' }));
 });
+
+//POST experience
+// access:private
+router.post(
+  '/experience',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validateExperienceInput(req.body);
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const newExperience = {
+        title: req.body.title,
+        company: req.body.company,
+        location: req.body.location,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+      };
+      profile.experience.unshift(newExperience);
+      profile.save().then(profile => res.json(profile));
+    });
+  }
+);
+
+//POST education
+router.post(
+  '/education',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validateEducationInput(req.body);
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const newEducation = {
+        school: req.body.school,
+        degree: req.body.degree,
+        fieldofstudy: req.body.fieldofstudy,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+      };
+      profile.education.unshift(newEducation);
+      profile.save().then(profile => res.json(profile));
+    });
+  }
+);
 
 module.exports = router;
