@@ -186,4 +186,53 @@ router.post(
   }
 );
 
+//DELETE experience
+router.delete(
+  '/experience/:experience_id',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const removeIndex = profile.experience
+        .map(item => item.id)
+        .indexOf(req.params.experience_id);
+      profile.experience.splice(removeIndex, 1);
+      profile
+        .save()
+        .then(profile => res.json(profile))
+        .catch(err => res.status(404).json(err));
+    });
+  }
+);
+
+//DELETE education
+router.delete(
+  '/education/:education_id',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const removeIndex = profile.education
+        .map(item => item.id)
+        .indexOf(req.params.education_id);
+      profile.education.splice(removeIndex, 1);
+      profile
+        .save()
+        .then(profile => res.json(profile))
+        .catch(err => res.status(404).json(err));
+    });
+  }
+);
+
+//delete user and profile
+router.delete(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    Profile.findOneAndRemove({ user: req.user.id }).then(() => {
+      User.findOneAndRemove({ _id: req.user.id }).then(() =>
+        res.json({ success: true })
+      );
+    });
+  }
+);
+
 module.exports = router;
