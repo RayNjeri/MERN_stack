@@ -5,6 +5,7 @@ const passport = require('passport');
 
 const Profile = require('../../models/Profile');
 const User = require('../../models/Users');
+const validateProfileInput = require('../../validation/profile');
 
 router.get('/test', (req, res) =>
   res.json({
@@ -18,6 +19,7 @@ router.get(
   (req, res) => {
     const errors = {};
     Profile.findOne({ user: req.user.id })
+      .populate('user', ['name', 'avatar'])
       .then(profile => {
         if (!profile) {
           errors.noprofile = 'There is no profile for this user';
@@ -34,6 +36,12 @@ router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
   (req, res) => {
+    //input validation
+    const { errors, isValid } = validateProfileInput(req.body);
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+
     const profileFields = {};
     profileFields.user = req.user.id;
     if (req.body.handle) profileFields.handle = req.body.handle;
